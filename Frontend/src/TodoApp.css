@@ -36,12 +36,10 @@ body {
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   padding: 40px 24px;
-  
-  /* --- CRITICAL FIXES --- */
   display: flex;
-  flex-direction: column; /* Stacks items vertically */
-  height: 100vh;          /* Forces sidebar to span full screen height */
-  position: sticky;       /* Keeps it fixed while scrolling tasks */
+  flex-direction: column;
+  height: 100vh;          
+  position: sticky;       
   top: 0;
   box-sizing: border-box; 
 }
@@ -189,7 +187,6 @@ body {
   }
 }
 
-
 .user-greeting {
   display: flex;
   align-items: baseline;
@@ -202,7 +199,6 @@ body {
   margin: 0;
   white-space: nowrap; 
 }
-/* Auth Specific Styles */
 .auth-wrapper {
   display: flex;
   justify-content: center;
