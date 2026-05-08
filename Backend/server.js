@@ -1,16 +1,18 @@
-const express=require('express');
-const cors=require('cors');
-const bodyParser=require('body-parser');
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
-const app=express();
+const app = express();
 app.use(cors()); 
 app.use(bodyParser.json());
 
 let users = []; 
 let userLists = {}; 
+
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (users.find(u => u.username === username)) return res.status(400).json({ error: "User exists" });
+  
   users.push({ username, password });
   userLists[username] = [{ id: 'default', name: 'Personal', tasks: [] }];
   res.status(201).json({ message: "User created" });

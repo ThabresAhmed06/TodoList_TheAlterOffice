@@ -8,130 +8,136 @@ function TodoApp() {
   const [user, setUser] = useState(() => localStorage.getItem('current_user'));
   const [lists, setLists] = useState([{ id: 'default', name: 'Loading...', tasks: [] }]);
   const [activeListId, setActiveListId] = useState('default');
-
-  const API_URL="http://localhost:5000/api";
+  const API_URL = "http://localhost:5000/api";
   useEffect(() => {
     if (user) {
       fetch(`${API_URL}/lists/${user}`)
-        .then(res=>res.json())
-        .then(data=>{
-          if (data.length > 0) setLists(data);
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            setLists(data);
+            setActiveListId(data[0].id);
+          } else {
+            setLists([{ id: 'default', name: 'My Tasks', tasks: [] }]);
+          }
         })
-        .catch(err=>console.error("Failed to load data:", err));
+        .catch(err => console.error("Data fetch failed:", err));
     }
   }, [user]);
-  useEffect(()=>{
+  useEffect(() => {
     if (user && lists[0].name !== 'Loading...') {
       fetch(`${API_URL}/lists/${user}`, {
-        method:'POST',
-        headers:{ 'Content-Type': 'application/json' },
-        body:JSON.stringify({ lists })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lists })
       }).catch(err => console.error("Sync failed:", err));
     }
   }, [lists, user]);
-
   const addNewList = () => {
-    const name=prompt("Enter list name:");
+    const name = prompt("Name your new list:");
     if (!name || !name.trim()) return;
-    
-    const newList={ id: Date.now().toString(), name: name.trim(), tasks: [] };
-    setLists(prev=>[...prev, newList]);
+    const newList = { 
+      id: Date.now().toString(), 
+      name: name.trim(), 
+      tasks: [] 
+    };
+    setLists(prev => [...prev, newList]);
     setActiveListId(newList.id);
   };
-
-  const addTask=(text) => {
-    setLists(prevLists => prevLists.map(list => {
+  const handleEditListName = (listId) => {
+    const listToEdit = lists.find(l => l.id === listId);
+    const newName = prompt("Rename this list:", listToEdit.name);
+    if (!newName || !newName.trim() || newName === listToEdit.name) return;
+    setLists(prev => prev.map(list => 
+      list.id === listId ? { ...list, name: newName.trim() } : list
+    ));
+  };
+  const addTask = (text) => {
+    setLists(prev => prev.map(list => {
       if (list.id === activeListId) {
-        return { 
-          ...list, 
-          tasks: [...list.tasks, { id: Date.now(), text, completed: false }] 
-        };
+        return { ...list, tasks: [...list.tasks, { id: Date.now(), text, completed: false }] };
       }
       return list;
     }));
   };
 
-  const toggleTask=(taskId) => {
-    setLists(prevLists => prevLists.map(list => {
-      if (list.id === activeListId) {
-        return {
-          ...list,
-          tasks: list.tasks.map(task => 
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-          )
-        };
-      }
-      return list;
-    }));
-  };
-
-  const deleteTask=(taskId) => {
-    setLists(prevLists => prevLists.map(list => {
+  const toggleTask = (taskId) => {
+    setLists(prev => prev.map(list => {
       if (list.id === activeListId) {
         return {
           ...list,
-          tasks: list.tasks.filter(task => task.id !== taskId)
+          tasks: list.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
         };
       }
       return list;
     }));
   };
-
-  const clearCompleted=() => {
-    setLists(prevLists => prevLists.map(list => {
+  const deleteTask = (taskId) => {
+    setLists(prev => prev.map(list => {
       if (list.id === activeListId) {
-        return {
-          ...list,
-          tasks: list.tasks.filter(task => !task.completed)
-        };
+        return { ...list, tasks: list.tasks.filter(t => t.id !== taskId) };
       }
       return list;
     }));
   };
-
-  const handleLogout=() => {
+  const clearCompleted = () => {
+    setLists(prev => prev.map(list => {
+      if (list.id === activeListId) {
+        return { ...list, tasks: list.tasks.filter(t => !t.completed) };
+      }
+      return list;
+    }));
+  };
+  const logout = () => {
     setUser(null);
     localStorage.removeItem('current_user');
   };
-
-  if (!user) return <Auth onLogin={(u) => setUser(u)} />;
-  const activeList = lists.find(l => l.id === activeListId) || { name: 'Loading...', tasks: [] };
+  if (!user) return <Auth onLogin={setUser} />;
+  const activeList = lists.find(l => l.id === activeListId) || lists[0];
   return (
     <div className="todo-app">
+      {/* SIDEBAR */}
       <aside className="header">
-        <div className="user-info-professional">
-          <h2 className="user-display-name">Welcome Back, {user}</h2>
+        <div className="user-profile">
+          <h2 className="user-name">Welcome, {user}</h2>
         </div>
-
-        <nav className="sidebar-section">
-          <p className="section-label">MY LISTS</p>
-          <ul className="list-nav">
+        <nav className="sidebar-nav">
+          <p className="sidebar-label">MY LISTS</p>
+          <ul className="list-items">
             {lists.map(list => (
               <li 
                 key={list.id} 
-                className={list.id === activeListId ? "active-list-item" : "list-item"}
+                className={list.id === activeListId ? "list-link active" : "list-link"}
                 onClick={() => setActiveListId(list.id)}
               >
-                <span>{list.name}</span>
-                <span className="task-count">{list.tasks.length}</span>
+                <span className="list-title">{list.name}</span>
+                <span className="badge">{list.tasks.length}</span>
               </li>
             ))}
-            <li className="add-list-btn" onClick={addNewList}>
-              + New List
-            </li>
+            <button className="btn-add-list" onClick={addNewList}>
+              + Create New List
+            </button>
           </ul>
         </nav>
         
-        <button className="logout-button" onClick={handleLogout}>Logout</button>
+        <button className="btn-logout" onClick={logout}>Log Out</button>
       </aside>
-
       <main className="main-content">
-        <div className="content-wrapper">
+        <div className="content-container">
           <header className="list-header">
-            <h1 className="active-list-title">{activeList.name}</h1>
+            <div className="active-list-title-group">
+              <h1 className="main-title">{activeList.name}</h1>
+              <button 
+                className="edit-list-title-btn" 
+                onClick={() => handleEditListName(activeList.id)}
+              >
+                ✎
+              </button>
+            </div>
+            
             <TodoInput onAddTask={addTask} />
           </header>
-          
+
           <TodoList 
             tasks={activeList.tasks} 
             onToggle={toggleTask} 
@@ -141,6 +147,7 @@ function TodoApp() {
         </div>
       </main>
     </div>
+    
   );
 }
 
