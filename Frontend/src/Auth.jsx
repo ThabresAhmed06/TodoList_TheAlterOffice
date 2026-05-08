@@ -1,36 +1,30 @@
 import React, { useState } from 'react';
 
 const Auth = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [isLogin, setIsLogin]=useState(true);
+  const [username, setUsername]=useState('');
+  const [password, setPassword]=useState('');
+  const [errorMessage, setErrorMessage]=useState('');
 
-  const handleAuth = async (e) => {
+  const handleAuth=async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    const cleanUsername = username.trim();
-    
-    const endpoint = isLogin ? '/api/login' : '/api/register';
-    
+    const cleanUsername=username.trim();
+    const endpoint=isLogin ? '/api/login' : '/api/register';
     try {
-      const response = await fetch(`http://localhost:5000${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: cleanUsername, password })
+      const response=await fetch(`http://localhost:5000${endpoint}`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json' },
+        body:JSON.stringify({username:cleanUsername,password })
       });
-
-      const data = await response.json();
+      const data=await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Something went wrong');
       }
-
-      // Success: Tell the parent app who logged in
       onLogin(cleanUsername);
       localStorage.setItem('current_user', cleanUsername);
-      
-    } catch (err) {
+    } catch(err) {
       setErrorMessage(err.message);
     }
   };
