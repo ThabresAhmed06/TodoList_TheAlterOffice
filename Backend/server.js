@@ -1,20 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const express=require('express');
+const cors=require('cors');
+const bodyParser=require('body-parser');
 
-const app = express();
-app.use(cors()); // Allows your React app to talk to this server
+const app=express();
+app.use(cors()); 
 app.use(bodyParser.json());
 
-// In-memory "database" for now (Replace with MongoDB later for permanent storage)
 let users = []; 
-let userLists = {}; // Format: { username: [{ id, name, tasks: [] }] }
-
-// --- Auth Routes ---
+let userLists = {}; 
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (users.find(u => u.username === username)) return res.status(400).json({ error: "User exists" });
-  
   users.push({ username, password });
   userLists[username] = [{ id: 'default', name: 'Personal', tasks: [] }];
   res.status(201).json({ message: "User created" });
@@ -27,7 +23,6 @@ app.post('/api/login', (req, res) => {
   res.json({ username: user.username });
 });
 
-// --- List Routes ---
 app.get('/api/lists/:username', (req, res) => {
   res.json(userLists[req.params.username] || []);
 });
