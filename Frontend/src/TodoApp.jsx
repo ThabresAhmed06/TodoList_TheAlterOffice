@@ -6,23 +6,31 @@ import './TodoApp.css';
 
 function TodoApp() {
   const [user, setUser] = useState(() => localStorage.getItem('current_user'));
-  
-  // State for multiple lists
-  const [lists, setLists] = useState(() => {
-    const saved = localStorage.getItem(`lists_${user}`);
-    return saved ? JSON.parse(saved) : [{ id: 'default', name: 'Groceries', tasks: [] }];
-  });
-  
-  // Track active list
+  const [lists, setLists] = useState([{ id: 'default', name: 'Loading...', tasks: [] }]);
   const [activeListId, setActiveListId] = useState('default');
 
-  // Helper to get the current list object
-  const activeList = lists.find(l => l.id === activeListId) || lists[0];
+  const API_URL = "http://localhost:5000/api";
 
-  // Save to local storage whenever lists or user changes
+  // 1. Fetch data from Backend on Login
   useEffect(() => {
     if (user) {
-      localStorage.setItem(`lists_${user}`, JSON.stringify(lists));
+      fetch(`${API_URL}/lists/${user}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.length > 0) setLists(data);
+        })
+        .catch(err => console.error("Failed to load data:", err));
+    }
+  }, [user]);
+
+  // 2. Sync changes to Backend whenever lists update
+  useEffect(() => {
+    if (user && lists[0].name !== 'Loading...') {
+      fetch(`${API_URL}/lists/${user}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lists })
+      }).catch(err => console.error("Sync failed:", err));
     }
   }, [lists, user]);
 
@@ -92,7 +100,7 @@ function TodoApp() {
 
   // If not logged in, show Auth component
   if (!user) return <Auth onLogin={(u) => setUser(u)} />;
-
+  const activeList = lists.find(l => l.id === activeListId) || { name: 'Loading...', tasks: [] };
   return (
     <div className="todo-app">
       {/* Sidebar Section */}

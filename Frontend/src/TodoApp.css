@@ -335,7 +335,7 @@ body {
   width: 100%;
   margin-top: 30px;
   flex-grow: 1; 
-  overflow-y: auto; /* If you have 50+ lists, only this section scrolls */
+  overflow-y: auto;
   margin-bottom: 20px;
 }
 
@@ -413,8 +413,7 @@ body {
 
 .clear-btn:hover {
   background-color: #f8fafc;
-  color: #ef4444;
-  border-color: #fecaca;
+  color: #10B981;
   transform: translateY(-1px);
 }
 

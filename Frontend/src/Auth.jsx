@@ -6,45 +6,33 @@ const Auth = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleAuth = (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault();
-    setErrorMessage(''); // Clear errors on new attempt
-
-    const existingUsers = JSON.parse(localStorage.getItem('todo_users') || '[]');
-    const cleanUsername = username.trim();
-
-    if (isLogin) {
-      // --- Login Flow ---
-      const foundUser = existingUsers.find(
-        u => u.username === cleanUsername && u.password === password
-      );
-
-      if (!foundUser) {
-        return setErrorMessage('Wrong username or password. Try again!');
-      }
-
-      onLogin(foundUser.username);
-    } else {
-      // --- Signup Flow ---
-      const userExists = existingUsers.some(u => u.username === cleanUsername);
-
-      if (userExists) {
-        return setErrorMessage('That username is already taken.');
-      }
-
-      const newUser = { username: cleanUsername, password };
-      const updatedUsers = [...existingUsers, newUser];
-      
-      localStorage.setItem('todo_users', JSON.stringify(updatedUsers));
-      onLogin(newUser.username);
-    }
-  };
-
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
     setErrorMessage('');
-    setUsername('');
-    setPassword('');
+    const cleanUsername = username.trim();
+    
+    const endpoint = isLogin ? '/api/login' : '/api/register';
+    
+    try {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: cleanUsername, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      // Success: Tell the parent app who logged in
+      onLogin(cleanUsername);
+      localStorage.setItem('current_user', cleanUsername);
+      
+    } catch (err) {
+      setErrorMessage(err.message);
+    }
   };
 
   return (
@@ -53,7 +41,7 @@ const Auth = ({ onLogin }) => {
         <header>
           <h2>{isLogin ? 'Welcome Back' : 'Get Started'}</h2>
           <p className="auth-subtitle">
-            {isLogin ? "Good to see you again! Let's get to work." : "Organize your life in one place."}
+            {isLogin ? "Good to see you again!" : "Organize your life in one place."}
           </p>
         </header>
 
@@ -66,7 +54,7 @@ const Auth = ({ onLogin }) => {
               id="username"
               className="auth-input"
               type="text" 
-              placeholder="Enter Your Username"
+              placeholder="Enter your username"
               value={username} 
               onChange={(e) => setUsername(e.target.value)} 
               required 
@@ -94,7 +82,11 @@ const Auth = ({ onLogin }) => {
         <footer className="auth-footer">
           <p>
             {isLogin ? "New here?" : "Already joined?"}{' '}
-            <button className="auth-toggle-link" onClick={toggleMode}>
+            <button 
+              className="auth-toggle-link" 
+              onClick={() => { setIsLogin(!isLogin); setErrorMessage(''); }}
+              type="button"
+            >
               {isLogin ? 'Create an account' : 'Sign in instead'}
             </button>
           </p>
